@@ -1,0 +1,12 @@
+*.DS_Store*
+dist/*
+*.egg-info/*
+*.idea/*
+*.ipynb
+*.pyc
+*mainenv*
+.coverage
+.python-version
+.vscode
+build
+venv*
