@@ -3,6 +3,7 @@ import setuptools
 REQUIRED_PACKAGES = [
     "pytest==6.2.5",
     "requests==2.26.0",
+    "aiohttp==3.9.5",
 ]
 
 setuptools.setup(

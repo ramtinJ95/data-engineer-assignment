@@ -1,5 +1,7 @@
 import argparse
 import requests
+import asyncio
+import aiohttp
 
 
 class SmhiParser:
@@ -49,7 +51,7 @@ class SmhiParser:
             print("Failed to retrieve parameters.")
             return []
 
-    def get_average_temps_past_day(self, active_stations):
+    def get_average_temps_past_day_sync(self, active_stations):
         all_station_values = []
         for station_id in active_stations:
             r = self._make_request(
@@ -73,6 +75,40 @@ class SmhiParser:
         all_station_values.sort(key=lambda x: x[1])
         return all_station_values
 
+    def build_url_list(self, active_stations):
+        urls = []
+        for station_id in active_stations:
+            url = f"{self.BASE_URL}/version/1.0/parameter/2/station/{station_id}/period/latest-day/data{self.suffix}"
+            urls.append(url)
+        return urls
+
+    def get_tasks(self, urls, session):
+        tasks = []
+        for url in urls:
+            tasks.append(session.get(url, ssl=False))
+        return tasks
+
+    async def get_temps(self):
+        response_results = []
+        all_station_values = []
+        async with aiohttp.ClientSession() as session:
+            active_stations = self.get_active_stations()
+            urls = self.build_url_list(active_stations)
+            tasks = self.get_tasks(urls, session)
+
+            responses = await asyncio.gather(*tasks)
+            for response in responses:
+                response_results.append(await response.json())
+
+            for data in response_results:
+                if data["value"]:
+                    station_data = (data['station']['name'], float(
+                        data['value'][0]['value']))
+                    all_station_values.append(station_data)
+
+            all_station_values.sort(key=lambda x: x[1])
+            return all_station_values
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -90,16 +126,18 @@ def main():
             print(f"{parameter[0]}, {parameter[1]} ({parameter[2]})")
 
     elif args.temperatures:
-        active_stations = smhi_parser.get_active_stations()
-        result = smhi_parser.get_average_temps_past_day(active_stations)
+        result = asyncio.run(smhi_parser.get_temps())
+        print(f"Highest temperature: {result[-1][0]}, {result[-1][1]}")
+        print(f"Lowest temperature: {result[0][0]}, {result[0][1]}")
 
         # If I was doing this for real, I would check the values in the result
         # list, since with just one decimal point accuracy there can be two
         # stations with the same average temperature, and both should be listed
         # So we can be sure that this pipeline is idempotent each day atleast.
 
-        print(f"Highest temperature: {result[-1][0]}, {result[-1][1]}")
-        print(f"Lowest temperature: {result[0][0]}, {result[0][1]}")
+        # For this Async version I would also look into adding rate limiting,
+        # either by using a lib or using semaphores or chunking up the task
+        # list somehow.
 
 
 if __name__ == "__main__":
