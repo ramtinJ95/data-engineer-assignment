@@ -49,7 +49,7 @@ class SmhiParser:
             print("Failed to retrieve parameters.")
             return []
 
-    def get_average_temps_past_day(self, active_stations):
+    def get_average_temps_past_day_sorted(self, active_stations):
         all_station_values = []
         for station_id in active_stations:
             r = self._make_request(
@@ -91,7 +91,7 @@ def main():
 
     elif args.temperatures:
         active_stations = smhi_parser.get_active_stations()
-        result = smhi_parser.get_average_temps_past_day(active_stations)
+        result = smhi_parser.get_average_temps_past_day_sorted(active_stations)
 
         # If I was doing this for real, I would check the values in the result
         # list, since with just one decimal point accuracy there can be two

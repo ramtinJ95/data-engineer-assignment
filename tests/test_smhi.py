@@ -23,10 +23,10 @@ def test_get_active_stations():
     assert len(stations) > 0, "Expected non-empty list of active stations"
 
 
-def test_get_average_temps_past_day():
+def test_get_average_temps_past_day_sorted():
     parser = SmhiParser()
     active_stations = parser.get_active_stations()
-    temperatures = parser.get_average_temps_past_day(active_stations)
+    temperatures = parser.get_average_temps_past_day_sorted(active_stations)
     assert isinstance(temperatures, list), "Expected list of temperatures"
     assert len(temperatures) > 0, "Expected non-empty list of temperatures"
     assert all(isinstance(temp, tuple) and len(
